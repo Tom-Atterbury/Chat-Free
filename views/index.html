@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang = "en">
+  <head>
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+    <!-- Latest compiled JavaScript -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+    <!-- Web Socket for data transfer -->
+  	<script src="/socket.io/socket.io.js"></script>
+  
+    <meta charset = "utf-8">
+    <meta name = "viewport" content = "width = device-width, initial-scale=1">
+
+    <title> ComS 319 Chat Free Simple </title>
+
+    <script>
+      function setCookie(cname, cvalue, exdays) {
+        var d = new Date();
+        d.setTime(d.getTime() + (exdays*24*60*60*1000));
+        var expires = "expires="+d.toUTCString();
+        document.cookie = cname + "=" + cvalue + "; " + expires;
+      }
+
+      function deleteCookie(cname) {
+        document.cookie = cname + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+      }
+
+      function getCookie(cname) {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0)==' ') c = c.substring(1);
+          if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+        }
+        return "";
+      }
+
+      function checkCookie() {
+        var user = getCookie("username");
+        if (user != "") {
+          username = user;
+          socket.emit('login',username);
+        }
+      }
+    </script>
+  </head>
+
+  <body style = "background-color:#454545">
+    <div id = 'div_header' class = "navbar navbar-inverse">
+      <div class = "col-xs-4 navbar-brand">Chat Free</div>
+      <div class = "col-xs-1"></div>
+      <div class = "col-xs-7 navbar-brand text-right">
+        Welcome <span id = 'username'>guest</span>!
+        <button id = "btn_login" class = "btn btn-sm btn-success">Login</button>
+      </div>
+    </div>
+    
+    <div id = 'div_page' class = "container-fluid">
+      <div id = 'div_paint' class = "col-xs-9 jumbotron">
+        <div id = 'div_canvas'>
+          <div id = 'div_pallet'></div>
+        </div>
+      </div> 
+
+      <div id = 'div_userlist' class = "containter-fluid col-xs-3 panel-primary">
+        <div class = "panel-heading">Chatting</div>
+        <textarea readonly id = 'userlist' class = "form-control" rows = "10" style = "resize:none"></textarea>
+      </div>
+      <div id = 'div_spacer' class = "container-fluid"><br></div>
+      <div id = 'div_chat' class = "container-fluid">
+        <textarea readonly id = 'chat' class = "form-control" rows = "6" style = "resize:none"></textarea>
+        <div id = 'div_input'>
+          <form id= 'frm_message'>
+            <input type = 'text' id = 'txt_input' name = 'txt_input' value = '' class = "form-control">
+            <input type = 'submit' id = 'btn_send' value = 'Send' class = "btn btn-info btn-xs btn-block">
+          </form>
+        </div>
+      </div>
+          
+    </div>
+
+    <script>
+      $(function(){
+  			socket = io.connect();
+        checkCookie();
+        var username;
+        var loggedin = false;
+        $('#txt_input').prop('disabled', true);
+        $('#btn_send').prop('disabled', true);
+
+        socket.emit('get_users');
+        
+  			$('#frm_message').submit(function(e){
+  				e.preventDefault();
+          if($('#txt_input').val().trim() !== '')
+    				socket.emit('post',$('#txt_input').val(),$('#username').html());
+
+  				$('#txt_input').val('');
+  			});
+			
+  			socket.on('message',function(data){
+          var old_text = $('#chat').val();
+          if(old_text === '')
+    				$('#chat').val(data);
+          else
+            $('#chat').val(old_text + "\n" + data);
+
+          $('#chat').scrollTop($('#chat')[0].scrollHeight);
+  			})
+
+        socket.on('user_list_update',function(list){
+          $('#userlist').val('');
+          list.forEach(function(user){
+            var old_text = $('#userlist').val();
+            if(old_text === '')
+              $('#userlist').val(user);
+            else
+              $('#userlist').val(old_text + "\n" + user);
+          });
+        })
+
+        $("#btn_login").click(function(){
+          if(loggedin){
+            $('#username').html("guest");
+            $('#txt_input').prop('disabled', true);
+            $('#btn_send').prop('disabled', true);
+            $('#btn_login').html("Login");
+            loggedin = false;
+            socket.emit('logout',username);
+            deleteCookie("username");
+          } else{
+            username = prompt("Make a name for yourself!","guest");
+            if(username !== null){
+              setCookie("username", username, 30);
+              socket.emit('login',username);
+            }
+          }
+        })
+
+        socket.on('login_response',function(success,user){
+          $('#username').html(user);
+          username = user;
+          if(success){
+            $('#btn_login').html("Logout");
+            $('#txt_input').prop('disabled', false);
+            $('#btn_send').prop('disabled', false);
+            loggedin = true;
+            $('#txt_input').focus();
+          } else {
+            alert("Invalid username.");
+          }
+        });
+
+  		}())
+    </script>
+  </body>
+</html>

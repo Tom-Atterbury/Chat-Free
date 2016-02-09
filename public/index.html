@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang = "en">
+  <head>
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+    <!-- Latest compiled JavaScript -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+    <!-- Web Socket for data transfer -->
+  	<script src="/socket.io/socket.io.js"></script>
+
+    <meta charset = "utf-8">
+    <meta name = "viewport" content = "width = device-width, initial-scale=1">
+
+    <title> ComS 319 Multi-Draw </title>
+  </head>
+
+  <body style = "background-color:#454545">
+    <div id = 'div_header' class = "row">
+      <div class = "col-xs-2">Home</div>
+      <div class = "col-xs-8">Blank</div>
+      <div class = "col-xs-2">UserName</div>
+    </div>
+    <div id = 'div_page' class = "row">
+      <div id = 'div_paint' class = "col-xs-9">
+        <div id = 'div_canvas'>
+          <div id = 'div_pallet'></div>
+        </div>
+
+        <div id = 'div_chat' class = "container">
+          <textarea readonly id = 'chat' class = "form-control" rows = "10" style = "resize:none"></textarea>
+          <div id = 'div_input'>
+            <form id= 'frm_message'>
+              <input type = 'text' id = 'txt_input' name = 'txt_input' value = '' class = "form-control">
+              <input type = 'submit' id = 'btn_send' value = 'Send' class = "btn-info btn-xs btn-block">
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div id = 'div_userlist' class = "col-xs-3 panel panel-primary">
+        <div class = "panel-heading">Players</div>
+        <textarea readonly id = 'userlist' class = "panel-body" rows = "15" style = "resize:none"></textarea>
+      </div>
+    </div>
+    <div id = 'div_footer' class = "row"node></div>
+
+    <script>
+      function(){
+  			var socket = io.connect();
+  			$('#frm_message').submit(function(e){
+  				e.preventDefault();
+  				socket.emit('send',$('#txt_input').val());
+  				$('#txt_input').val('');
+  			});
+			
+  			socket.on('message',function(data){
+  				$('#chat').append(data + "\n");
+  			})
+  		}();
+    </script>
+  </body>
+</html>
